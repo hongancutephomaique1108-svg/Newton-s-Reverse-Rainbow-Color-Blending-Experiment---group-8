@@ -1,0 +1,516 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Đĩa Nhật – Nguyệt | Mô phỏng trộn màu của Newton</title>
+<style>
+:root{--bg:#f3f0e8;--card:#fff;--ink:#1c2230;--mut:#5b6475;--line:#e2ded3;--acc:#c2570c;--acc2:#3b4cc0;--stage1:#fbf9f3;--stage2:#dcd6c6;--chip:#f0ede4;
+box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0d1017;--card:#161b26;--ink:#eef1f7;--mut:#9aa4b8;--line:#262d3c;--acc:#f59a4a;--acc2:#8fa0ff;--stage1:#222a3a;--stage2:#0e121b;--chip:#1e2533}}
+:root[data-theme="dark"]{--bg:#0d1017;--card:#161b26;--ink:#eef1f7;--mut:#9aa4b8;--line:#262d3c;--acc:#f59a4a;--acc2:#8fa0ff;--stage1:#222a3a;--stage2:#0e121b;--chip:#1e2533}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;line-height:1.55}
+.wrap{max-width:1120px;margin:0 auto;padding:20px 16px 48px}
+h1{font-size:clamp(1.3rem,3.2vw,1.9rem);margin:0 0 4px;letter-spacing:-.01em}
+.sub{color:var(--mut);margin:0 0 20px;font-size:.95rem}
+.grid{display:grid;gap:16px;grid-template-columns:1fr}
+@media(min-width:900px){.grid{grid-template-columns:1.25fr .85fr}}
+.card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:16px}
+.card h2{font-size:.78rem;text-transform:uppercase;letter-spacing:.08em;color:var(--mut);margin:0 0 10px}
+.stage{padding:0;overflow:hidden}
+.view{aspect-ratio:1/1;width:100%;background:radial-gradient(circle at 50% 40%,var(--stage1),var(--stage2));display:flex}
+canvas{width:100%;height:100%;display:block}
+.ctrl{padding:14px 16px;border-top:1px solid var(--line);display:grid;gap:12px}
+.row{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+button{font:inherit;font-size:.88rem;padding:8px 13px;border-radius:999px;border:1px solid var(--line);background:var(--chip);color:var(--ink);cursor:pointer}
+button:hover{border-color:var(--acc)}
+button.on{background:var(--acc);border-color:var(--acc);color:#fff}
+button.flip{margin-left:auto;background:var(--acc2);border-color:var(--acc2);color:#fff}
+input[type=range]{width:100%;accent-color:var(--acc)}
+.sl{display:flex;justify-content:space-between;font-size:.76rem;color:var(--mut)}
+.big{font-size:2.1rem;font-weight:700;line-height:1}
+.big small{font-size:.9rem;font-weight:500;color:var(--mut)}
+.bar{height:10px;border-radius:99px;background:var(--chip);overflow:hidden;margin:8px 0 6px;border:1px solid var(--line)}
+.bar i{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--acc2),var(--acc));transition:width .15s}
+.mut{color:var(--mut);font-size:.86rem}
+.sw{display:flex;gap:10px;align-items:center;margin:6px 0}
+.sw>b{width:38px;height:38px;border-radius:10px;border:1px solid var(--line);flex:none}
+.col{display:grid;gap:16px;align-content:start}
+.steps{display:grid;gap:12px;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));margin-top:16px}
+.steps .card b.n{display:inline-grid;place-items:center;width:26px;height:26px;border-radius:8px;background:var(--acc);color:#fff;margin-right:8px;font-size:.85rem}
+table{border-collapse:collapse;width:100%;font-size:.86rem;margin-top:6px}
+td,th{padding:6px 8px;border-bottom:1px solid var(--line);text-align:left}
+.legend{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px}
+.legend span{font-size:.76rem;padding:3px 8px;border-radius:99px;color:#fff;text-shadow:0 0 2px rgba(0,0,0,.45)}
+h3.sec{margin:28px 0 0;font-size:1.15rem}
+.dv{display:grid;gap:16px;grid-template-columns:1fr;align-items:start;margin-top:14px}
+@media(min-width:800px){.dv{grid-template-columns:minmax(280px,440px) 1fr}}
+#dvSvg{width:100%;height:auto}
+.cmp{display:grid;gap:14px;grid-template-columns:1fr 1fr;margin-top:12px}
+.cmp canvas{width:100%;height:auto;aspect-ratio:1;border-radius:14px;background:var(--chip);margin-top:8px}
+select{font:inherit;padding:6px 8px;border-radius:8px;border:1px solid var(--line);background:var(--chip);color:var(--ink);max-width:100%}
+.opt{width:76px;height:76px;border-radius:14px;border:3px solid var(--line);cursor:pointer;padding:0}
+.opt.ok{border-color:#2e9e4f;box-shadow:0 0 0 3px rgba(46,158,79,.3)}.opt.no{opacity:.5}
+#dvSvg text{fill:var(--mut);font-size:10px}
+#dvSvg text.in{fill:#fff;font-size:12px;font-weight:600;paint-order:stroke;stroke:rgba(0,0,0,.55);stroke-width:2.5px}
+#dvSvg text.bd{fill:var(--acc);font-size:11px;font-weight:700}
+input[type=number],input[type=text]{font:inherit;padding:4px 8px;border-radius:8px;border:1px solid var(--line);background:var(--chip);color:var(--ink);width:74px}
+.lab{overflow-x:auto}.lab table{min-width:760px}.lab td{vertical-align:middle}.lab select{font-size:.8rem}.warn{border-left:4px solid var(--acc);background:var(--chip);border-radius:8px;padding:10px 14px;margin-top:12px}.card ul,.card ol{margin:6px 0;padding-left:20px}.card li{margin:5px 0}details{margin:6px 0}summary{cursor:pointer;color:var(--acc2)}
+</style>
+</head>
+<body>
+<div class="wrap">
+<h1>Đĩa Nhật – Nguyệt: mô phỏng trộn màu của Newton</h1>
+<p class="sub" style="margin-bottom:6px"><b>Nhóm 8 – KHTN – Lớp 9TC1</b><br>Thành viên: Nguyễn Gia Hồng Ân, Phạm Quỳnh Như</p>
+<p class="sub">Màu hòa trộn phụ thuộc vào tốc độ quay và không bao giờ "trắng tinh". Kéo thanh tốc độ để quan sát từng giai đoạn.</p>
+
+<div class="grid">
+ <div class="card stage">
+  <div class="view"><canvas id="cv" aria-label="Đĩa Newton đang quay"></canvas></div>
+  <div class="ctrl">
+   <div class="row" id="chips"></div>
+   <div>
+    <input type="range" id="sp" min="0" max="50" step="0.5" value="0">
+    <div class="sl"><span>0</span><span>12</span><span>25</span><span>37</span><span>50 vòng/giây</span></div>
+   </div>
+   <div class="row" id="lgt"><span class="mut">Nguồn sáng:</span></div>
+   <div class="mut" id="lgtTxt"></div>
+   <div class="row"><span class="mut" id="faceLbl"></span><button class="flip" id="flip">🔄 Lật sang mặt kia</button></div>
+  </div>
+ </div>
+
+ <div class="col">
+  <div class="card">
+   <h2>Số liệu thời gian thực</h2>
+   <div class="big"><span id="fv">0</span> <small>vòng/giây · <span id="rpm">0</span> vòng/phút</small></div>
+   <div class="bar"><i id="mixBar"></i></div>
+   <div><b>Độ hòa trộn ở tâm đĩa: <span id="mix">0</span>%</b></div>
+   <div class="mut" id="stageTxt"></div>
+  </div>
+  <div class="card">
+   <h2>Màu mắt thấy khi hòa trộn gần hoàn toàn</h2>
+   <div class="sw"><b id="swIn"></b><div><b id="hxIn"></b><div class="mut">Tâm đĩa (các cung cầu vồng)</div></div></div>
+   <div class="sw"><b id="swOut"></b><div><b id="hxOut"></b><div class="mut" id="outLbl">Vòng ngoài</div></div></div>
+   <div class="mut">Tâm đĩa ra <b>xám hơi ấm</b> (cỡ #9E9699 với các màu mô phỏng), không phải trắng. Giấy màu chỉ phản xạ một phần ánh sáng, nên khi trộn lại độ sáng thấp hơn giấy trắng.</div>
+  </div>
+  <div class="card">
+   <h2>Cơ sở vật lí của mô hình</h2>
+   <div class="mut">Mắt không ghi nhận ánh sáng tức thời mà lấy trung bình tín hiệu trong một khoảng thời gian ngắn. Mô hình coi mắt là bộ lọc thông thấp với hằng số thời gian τ ≈ 20 ms và trộn màu trong không gian ánh sáng tuyến tính. Quay càng nhanh, mỗi điểm trên mắt nhận về càng nhiều màu trong cùng khoảng τ nên các màu càng hòa. Quay chậm thì mắt vẫn tách được từng cung màu. Các con số là mô hình minh họa, thực tế còn tùy ánh sáng và người quan sát. Lưu ý: τ ≈ 20 ms là hằng số của bộ lọc trong mô hình, khác với thời gian “lưu ảnh” cỡ 0,1 s thường nêu trong tài liệu phổ thông (con số này thay đổi tùy nguồn và cách đo). Ngưỡng hòa nhấp nháy tham khảo: khoảng 25–30 Hz với màu, 50–60 Hz với độ sáng. Hằng số τ chưa được hiệu chuẩn bằng thực nghiệm; nhóm có thể tự hiệu chuẩn ở phần thí nghiệm bên dưới. Độ hòa trộn (%) là mức giảm chênh lệch màu giữa các điểm so với khi đứng yên.</div>
+  </div>
+ </div>
+</div>
+
+<h3 class="sec">Hướng dẫn làm đĩa thật (đường kính 12 cm, bán kính 6 cm)</h3>
+<div class="steps">
+ <div class="card"><b class="n">1</b><b>Chuẩn bị</b><div class="mut">Bìa cứng trắng, giấy hoặc bút màu (đỏ, cam, vàng, lục, lam, chàm, tím), sợi dây dài 60–80 cm, kéo, compa, thước đo góc. Dán hai lớp bìa để đĩa cứng, hai mặt phẳng.</div></div>
+ <div class="card"><b class="n">2</b><b>Kẻ các vòng đồng tâm</b>
+  <table>
+   <tr><th>Vòng</th><th>Bán kính</th><th>Nội dung</th></tr>
+   <tr><td>Lõi</td><td>0 – 0,5 cm</td><td>Để trắng</td></tr>
+   <tr><td>Tâm</td><td>0,5 – 3,5 cm</td><td>7 cung màu</td></tr>
+   <tr><td>Vòng ngăn</td><td>3,5 – 3,7 cm</td><td>Đen mảnh</td></tr>
+   <tr><td>Vòng ngoài</td><td>3,7 – 5,4 cm</td><td>12 cung × 30°</td></tr>
+   <tr><td>Viền</td><td>5,4 – 6 cm</td><td>24 cung × 15° trắng xen nhạt</td></tr>
+  </table></div>
+ <div class="card"><b class="n">3</b><b>Chia góc 7 cung ở tâm</b><div class="mut">Chia không đều nhau để màu trộn gần xám hơn thay vì ngả hồng (với giấy hoặc bút màu thật có thể cần tinh chỉnh). Dùng thước đo góc theo thứ tự:</div><div class="legend" id="lg"></div></div>
+ <div class="card"><b class="n">4</b><b>Hai mặt Nhật – Nguyệt</b><div class="mut">Mặt Nhật: vòng ngoài lặp đỏ, cam, vàng. Mặt Nguyệt: vòng ngoài lặp lam, chàm, tím. Tâm giữ nguyên 7 màu. Mặt sau ghi <b>NHÓM …</b> ở vùng viền.</div></div>
+ <div class="card"><b class="n">5</b><b>Đục lỗ, xỏ dây</b><div class="mut">Đục hai lỗ đối xứng qua tâm, mỗi lỗ cách tâm khoảng 1 cm. Xỏ dây, buộc thành vòng kín. Xoắn dây rồi kéo căng, nới đều để đĩa quay.</div></div>
+ <div class="card"><b class="n">6</b><b>Kết quả thực tế</b><div class="mut">Quanh 20 vòng/giây tâm đĩa đã nhòe nhiều nhưng còn nhấp nháy nhẹ; từ khoảng 30–40 vòng/giây thì khá đều (mô hình: 78–83%). Quay chậm hơn thì còn vằn màu. Tốc độ cần thiết tùy ánh sáng và người quan sát. Dán giấy màu phẳng sẽ cho màu đều hơn tô bút.</div></div>
+</div>
+
+<h3 class="sec">Chia đĩa chính xác (minh họa theo clip Newton's Disc – Reverse RAINBOW)</h3>
+<div class="card" style="margin-top:12px">
+ <div class="mut">Clip dùng đĩa 6 cung màu cầu vồng chia đều. Chọn một kiểu chia, trang sẽ vẽ sơ đồ có thước đo góc và tính sẵn các mốc cần đánh dấu. Mốc đo từ 0° ở đỉnh, tăng theo chiều kim đồng hồ.</div>
+ <div class="row" id="dvChips" style="margin-top:10px"></div>
+ <div class="dv">
+  <svg id="dvSvg" viewBox="-205 -205 410 410" role="img" aria-label="Sơ đồ chia đĩa có thước đo góc"></svg>
+  <div>
+   <div class="row mut">Đường kính đĩa (cm): <input type="number" id="dvD" value="12" min="4" max="40" step="0.5"></div>
+   <table id="dvT"></table>
+   <p class="mut" id="dvNote"></p>
+   <button id="dvApply" class="on">▶ Xem mô phỏng quay với kiểu chia này</button>
+  </div>
+ </div>
+</div>
+
+<h3 class="sec">Xưởng thiết kế đĩa của riêng bạn</h3>
+<div class="card" style="margin-top:12px">
+ <div class="mut">Thêm, xóa, đổi màu và độ rộng từng cung. Độ rộng tính theo tỉ lệ nên tổng không cần đúng 360°. Màu hòa trộn hiện ngay bên dưới. Bấm "Quay thử" để xem đĩa này quay ở mô phỏng chính. Chọn "Lặp dãy màu" 2 hoặc 3 lần để đĩa hòa màu nhanh hơn: lặp 2 lần quay 15 vòng/giây tương đương đĩa thường quay 30 vòng/giây.</div>
+ <div id="wsRows" style="margin-top:10px;display:grid;gap:6px"></div>
+ <div class="row" style="margin-top:10px"><button id="wsAdd">＋ Thêm cung</button><button id="wsBal">⚖ Tự cân bằng độ rộng</button><label class="mut">Lặp dãy màu <select id="wsRep"><option value="1">1 lần</option><option value="2">2 lần</option><option value="3">3 lần</option><option value="4">4 lần</option></select></label><button id="wsApply" class="on">▶ Quay thử đĩa này</button></div>
+ <div class="sw" style="margin-top:10px"><b id="wsSw"></b><div><b id="wsHx"></b><div class="mut" id="wsTxt"></div></div></div>
+</div>
+
+<h3 class="sec">Một điểm trên mắt nhìn thấy gì?</h3>
+<div class="card" style="margin-top:12px">
+ <div class="mut">Dải trên: màu thật đi qua một điểm cố định khi đĩa quay (theo tốc độ ở thanh trượt phía trên). Dải dưới: màu mắt cảm nhận sau khi lưu ảnh võng mạc làm mờ. Quay càng nhanh, dải dưới càng phẳng và đồng đều.</div>
+ <canvas id="eyeCv" width="700" height="140" style="width:100%;height:auto;margin-top:8px;border-radius:10px"></canvas>
+</div>
+
+<h3 class="sec">So sánh hai đĩa cạnh nhau</h3>
+<div class="card" style="margin-top:12px">
+ <div class="mut">Hai đĩa quay cùng tốc độ và cùng nguồn sáng (chọn ở phần mô phỏng chính). Chọn kiểu chia cho từng đĩa, ví dụ chia đều và chia cân bằng, để thấy ngay khác biệt sắc xám. Chọn "Đĩa trong Xưởng" để so sánh thiết kế của riêng bạn.</div>
+ <div class="cmp">
+  <div><b>Đĩa A</b> <select id="cmpA"></select> <select id="cmpRA" title="Lặp dãy màu"></select><canvas id="cmpCa" width="300" height="300"></canvas><div class="mut" id="cmpIA"></div></div>
+  <div><b>Đĩa B</b> <select id="cmpB"></select> <select id="cmpRB" title="Lặp dãy màu"></select><canvas id="cmpCb" width="300" height="300"></canvas><div class="mut" id="cmpIB"></div></div>
+ </div>
+ <div class="row mut" style="margin-top:12px">Tốc độ chung: <b id="cmpV">30</b> vòng/giây</div>
+ <input type="range" id="cmpSp" min="0" max="50" step="0.5" value="30">
+ <p id="cmpRes"><b></b></p>
+</div>
+
+<h3 class="sec">Mini game: đoán màu khi đĩa quay nhanh</h3>
+<div class="card" style="margin-top:12px">
+ <div class="dv">
+  <canvas id="gmCv" width="300" height="300" style="width:100%;max-width:280px;height:auto;aspect-ratio:1;border-radius:14px;background:var(--chip)"></canvas>
+  <div>
+   <div class="row"><b>Vòng <span id="gmR">1</span>/6</b><b>Điểm: <span id="gmS">0</span></b></div>
+   <p class="mut" id="gmQ">Đĩa quay thật nhanh dưới đèn trắng. Tâm đĩa sẽ có màu nào? Chọn ô màu đúng.</p>
+   <div class="row" id="gmOpts"></div>
+   <p class="mut" id="gmFb"></p>
+   <button id="gmNext" class="on" hidden>Vòng tiếp ▶</button>
+  </div>
+ </div>
+</div>
+
+<h3 class="sec">Bonus: đĩa Benham, đen trắng mà thấy màu</h3>
+<div class="card" style="margin-top:12px">
+ <div class="dv">
+  <canvas id="bnCv" width="360" height="360" style="width:100%;max-width:320px;height:auto;aspect-ratio:1;border-radius:14px;background:#e9e5da"></canvas>
+  <div>
+   <div class="row mut">Tốc độ: <b id="bnV">6</b> vòng/giây <button id="bnDir">⇄ Đổi chiều quay</button></div>
+   <input type="range" id="bnSp" min="0" max="12" step="0.5" value="6" style="margin:8px 0">
+   <p class="mut">Đĩa chỉ có đen và trắng (mẫu đơn giản hóa). Khi quay vài vòng mỗi giây, nhiều người thấy các vòng cung nhuộm màu nhạt, và đổi chiều quay thì thứ tự màu đảo lại. Đây là hiện tượng "màu chủ quan". Cơ chế chưa được giải thích trọn vẹn. Một giả thuyết cho rằng các loại tế bào nón phản ứng nhanh chậm khác nhau với xung sáng tối.</p>
+   <p class="mut">Hiệu ứng phụ thuộc người xem, độ sáng và màn hình, có người chỉ thấy rất nhẹ. Điểm chung với thí nghiệm Newton: mắt xử lí ánh sáng theo thời gian. Không nên nhìn lâu nếu thấy khó chịu với ánh nhấp nháy.</p>
+  </div>
+ </div>
+</div>
+
+
+<h3 class="sec">Hiểu đúng: đĩa này cho thấy điều gì?</h3>
+<div class="card" style="margin-top:12px"><ul class="mut">
+<li><b>Đĩa không chứng minh ánh sáng trắng gồm 7 màu.</b> Điều đó thuộc về thí nghiệm lăng kính của Newton: lăng kính tách ánh sáng trắng thành dải màu, và gom dải màu ấy lại thì thu được ánh sáng trắng.</li>
+<li><b>Đĩa chỉ cho thấy mắt lấy trung bình ánh sáng</b> theo thời gian (khi đĩa quay) và theo diện tích (mỗi cung chiếm bao nhiêu). Quy luật này gọi là định luật Talbot–Plateau (Plateau 1830, Talbot 1834): khi ánh sáng nhấp nháy đủ nhanh để mắt thấy là ổn định, độ sáng cảm nhận bằng trung bình theo thời gian của nó. Định luật chỉ áp dụng khi nhấp nháy đã “hòa”; chậm hơn thì mắt vẫn thấy nhấp nháy. Ngưỡng hòa khoảng 25–30 Hz với nhấp nháy màu và khoảng 50–60 Hz với nhấp nháy độ sáng (tùy độ sáng và người xem).</li>
+<li><b>Vì sao ra xám chứ không trắng:</b> giấy hoặc sắc tố màu chỉ phản xạ một phần ánh sáng chiếu vào, phần còn lại bị hấp thụ, nên trung bình tối hơn giấy trắng.</li>
+<li><b>Khác với trộn sơn:</b> trộn sơn là trộn trừ (các sắc tố cùng hấp thụ), thường ra màu sẫm hoặc nâu. Đĩa quay là lấy trung bình ánh sáng phản xạ nên màu sáng hơn.</li>
+<li><b>Số 7 màu</b> là quy ước: Newton chọn bảy màu theo tương tự với bảy nốt nhạc. Ranh giới giữa các màu trong dải thực ra liên tục.</li>
+</ul></div>
+
+<h3 class="sec">Thí nghiệm: đo tốc độ quay thật và so với mô phỏng</h3>
+<div class="steps">
+ <div class="card"><b>Chuẩn bị</b><div class="mut">Điện thoại quay được slow-motion (120 hoặc 240 khung hình/giây), đèn trắng đủ sáng, nền đơn sắc. Dán một mẩu băng keo đen nhỏ ở mép đĩa làm mốc đếm vòng. Giữ nguyên ánh sáng, khoảng cách quan sát và loại đĩa giữa các lần so sánh.</div></div>
+ <div class="card"><b>Đo tốc độ bằng video</b><div class="mut">Quay đĩa đang quay, mở video và xem từng khung hình. Đếm số khung hình <b>n</b> để mốc đen quay đúng một vòng. Tốc độ = <b>fps quay ÷ n</b> (vòng/giây). Ví dụ quay 240 fps, n = 12 thì tốc độ là 20 vòng/giây. Cần ít nhất khoảng 6 khung hình mỗi vòng, nếu ít hơn thì kết quả đếm dễ sai. Đĩa chậm dần khi quay, nên đo ở đoạn video ngay lúc bạn đang quan sát.</div></div>
+ <div class="card"><b>Quan sát màu</b><div class="mut">Ghi nhận màu bằng <b>mắt thường</b>, không qua video, vì camera lấy mẫu ánh sáng khác mắt. Mỗi kiểu đĩa thử ít nhất 3 lần rồi lấy giá trị hay gặp. Muốn so sánh hai đĩa, đặt cạnh nhau và quay cùng lúc.</div></div>
+ <div class="card"><b>Sai số</b><div class="mut">Lệch 1 khung hình trong n khung hình mỗi vòng cho sai số khoảng 1/n (n = 12 thì khoảng 8%). Mức quan sát là cảm nhận chủ quan, nên chỉ xem mô hình là dự đoán gần đúng, không phải đáp án tuyệt đối.</div></div>
+</div>
+<div class="card lab" style="margin-top:12px">
+ <div class="row mut">Tốc độ quay video (fps): <input type="number" id="labFps" value="240" min="30" step="10"> Nhập số khung hình n mỗi vòng ở từng dòng, bảng tự tính tốc độ và so với mô hình.</div>
+ <table style="margin-top:10px"><thead><tr><th>Lần</th><th>Kiểu đĩa</th><th>Lặp</th><th>n (khung hình/vòng)</th><th>Tốc độ (vòng/giây)</th><th>Tần số lặp (Hz)</th><th>Quan sát bằng mắt</th><th>Mô hình dự đoán</th><th>So sánh</th></tr></thead><tbody id="labB"></tbody></table>
+ <p class="mut">Cột “So sánh” đối chiếu mức quan sát với mức mô hình (dưới 20%: thấy rõ cung; 20–50%: còn vằn rõ; 50–80%: còn vằn nhạt; từ 80%: gần như đều). Lệch một mức là bình thường vì mắt mỗi người khác nhau.</p>
+ <div class="row" style="margin-top:8px"><button id="labFitB">🎯 Tìm τ khớp với số liệu của nhóm</button><button id="labFitA" hidden>Dùng τ này cho mô phỏng</button><span class="mut" id="labFit"></span></div>
+ <p class="mut">“Tần số lặp” = tốc độ × số lần lặp dãy màu: đây là tần số đổi màu tại một điểm trên đĩa, để so với ngưỡng hòa nhấp nháy ở phần “Hiểu đúng”. Nút τ tìm giá trị khiến mức mô hình khớp nhiều nhất với mức quan sát của nhóm (thử τ từ 5 đến 80 ms, cần từ 3 dòng số liệu).</p>
+ <div class="warn mut"><b>An toàn:</b> không kéo dây quá mạnh vì dây có thể đứt hoặc đĩa văng ra; giữ đĩa cách mặt và cách người xung quanh; dùng đĩa bìa nhẹ, không dùng vật cứng. Người nhạy cảm với ánh sáng nhấp nháy nên tránh nhìn đĩa đang quay nhanh và đĩa Benham.</div>
+</div>
+
+<h3 class="sec">Dự đoán trước, xem sau</h3>
+<div class="card" style="margin-top:12px"><div class="mut">Trước khi xem kết quả, hãy dự đoán tâm đĩa trông thế nào. Mô hình sẽ đưa đáp án để nhóm đối chiếu.</div>
+ <p id="pdQ" style="margin:10px 0 6px"></p><div class="row" id="pdOpts"></div><p class="mut" id="pdFb"></p>
+ <div class="row"><b>Điểm: <span id="pdS">0</span>/<span id="pdN">0</span></b><button id="pdNext" class="on">Câu mới ▶</button></div></div>
+
+<h3 class="sec">Câu hỏi thảo luận và kết luận</h3>
+<div class="card" style="margin-top:12px"><ol class="mut">
+<li>Đĩa có đủ 7 màu cầu vồng nhưng tâm đĩa không ra trắng. Vì sao?<details><summary>Gợi ý</summary>Sắc tố chỉ phản xạ một phần ánh sáng nên trung bình tối hơn giấy trắng.</details></li>
+<li>Vì sao đĩa lặp dãy màu 2 lần chỉ cần quay chậm hơn khoảng một nửa?<details><summary>Gợi ý</summary>Màu tại một điểm đổi nhanh gấp đôi, nên cùng tần số đổi màu ở tốc độ quay một nửa.</details></li>
+<li>Vì sao đĩa chia đều và đĩa chia cân bằng cho sắc xám khác nhau?<details><summary>Gợi ý</summary>Mỗi màu đóng góp theo diện tích và độ sáng của nó, nên cung nào rộng hoặc sáng hơn sẽ kéo kết quả về phía màu đó.</details></li>
+<li>Đổi sang đèn vàng thì kết quả thay đổi thế nào, vì sao?<details><summary>Gợi ý</summary>Đèn vàng ít ánh sáng lam nên các cung lam, chàm, tím phản xạ ít hơn và kết quả ngả vàng.</details></li>
+</ol>
+<div class="warn mut"><b>Kết luận mẫu (hãy viết lại theo số liệu của nhóm):</b> khi đĩa quay đủ nhanh, mắt không phân biệt kịp từng cung màu nên thấy một màu trung bình gần xám. Màu này tối hơn giấy trắng vì sắc tố hấp thụ ánh sáng. Tốc độ cần thiết phụ thuộc vào cách chia và lặp cung, vào ánh sáng và người quan sát. Chia cung cân bằng cho màu gần xám hơn chia đều.</div>
+<div class="mut"><b>Lịch sử và nguồn tham khảo</b><ul>
+<li>I. Newton, <i>Opticks</i> (1704): thí nghiệm lăng kính (tách và gom lại ánh sáng trắng) và vòng tròn bảy màu. Newton chọn bảy màu theo tương tự với quãng nhạc.</li>
+<li>Tên “đĩa Newton” gắn với vòng tròn màu của ông. Việc dùng đĩa quay có các cung giấy màu điều chỉnh được để nghiên cứu trộn màu được phát triển rõ nét hơn sau đó: J. C. Maxwell, <i>Experiments on Colour, as perceived by the Eye, with remarks on Colour-Blindness</i>, Transactions of the Royal Society of Edinburgh (đọc năm 1855).</li>
+<li>Định luật Talbot–Plateau: J. Plateau (1830), H. F. Talbot (1834); tổng quan hiện đại: “Evaluating the Talbot-Plateau law”, <i>Frontiers in Neuroscience</i> (2023).</li>
+<li>Ngưỡng hòa nhấp nháy màu và độ sáng: Shady, MacLeod &amp; Fisher, <i>PNAS</i> (2004), và các tài liệu về critical flicker fusion.</li>
+<li>Các hằng số của mô hình (τ, ngưỡng mức quan sát) mang tính minh họa; nhóm nên hiệu chuẩn bằng số liệu thực nghiệm của mình.</li></ul></div>
+</div>
+
+</div>
+
+<script>
+(function(){
+const N=360;let TAU=0.02;
+let RAINBOW=['#D32F2F','#F57C00','#FFEB3B','#4CAF50','#03A9F4','#3F51B5','#9C27B0'];
+let NAMES=['Đỏ','Cam','Vàng','Lục','Lam','Chàm','Tím'];
+let W=[36,36,48,68,68,68,36];
+function fmt(x){return Number(x.toFixed(2)).toString().replace('.',',')}
+const FACES={
+ sun:{name:'Mặt Nhật',outer:['#E53935','#FB8C00','#FDD835'],rim:'#FFD9A0',lbl:'Vòng ngoài: đỏ – cam – vàng (màu nóng)'},
+ moon:{name:'Mặt Nguyệt',outer:['#1E88E5','#3949AB','#8E24AA'],rim:'#C6CFFF',lbl:'Vòng ngoài: lam – chàm – tím (màu lạnh)'}
+};
+const h2l=h=>[1,3,5].map(i=>Math.pow(parseInt(h.substr(i,2),16)/255,2.2));
+const s255=v=>Math.round(255*Math.pow(Math.min(1,Math.max(0,v)),1/2.2));
+const css=v=>'rgb('+s255(v[0])+','+s255(v[1])+','+s255(v[2])+')';
+const hex=v=>'#'+v.map(x=>s255(x).toString(16).padStart(2,'0')).join('').toUpperCase();
+function patterns(face){
+ const inner=[];let acc=0,idx=0;for(let d=0;d<N;d++){while(idx<W.length-1&&d+0.5>=acc+W[idx]){acc+=W[idx];idx++}inner.push(h2l(RAINBOW[idx]))}
+ const outer=[],rim=[],rc=h2l(face.rim),wh=h2l('#FBFAF6');
+ for(let d=0;d<N;d++){outer.push(h2l(face.outer[Math.floor(d/30)%3]));rim.push(Math.floor(d/15)%2?rc:wh)}
+ return {inner,outer,rim};
+}
+function mean(a){const m=[0,0,0];a.forEach(v=>{for(let k=0;k<3;k++)m[k]+=v[k]/a.length});return m}
+// bộ lọc thông thấp theo góc: điểm trên đĩa quay theo chiều tăng góc nên "trí nhớ" lấy từ các góc lớn hơn
+function blur(c,L){
+ const a=L<0.05?0:Math.exp(-1/L),y=c.map(v=>v.slice());
+ for(let t=0;t<N*8;t++){const i=N-1-(t%N),j=(i+1)%N;for(let k=0;k<3;k++)y[i][k]=a*y[j][k]+(1-a)*c[i][k]}
+ return y;
+}
+function rms(a,m){let s=0;a.forEach(v=>{for(let k=0;k<3;k++)s+=(v[k]-m[k])*(v[k]-m[k])});return Math.sqrt(s/a.length)}
+
+let face='sun',pat=patterns(FACES.sun),cols={},f=0,target=0,fCalc=-1,phase=0,mixPct=0;
+const cv=document.getElementById('cv'),ctx=cv.getContext('2d');
+let S=0;
+function fit(){const r=cv.getBoundingClientRect(),d=Math.min(window.devicePixelRatio||1,2);S=r.width;cv.width=Math.round(r.width*d);cv.height=Math.round(r.height*d);ctx.setTransform(d,0,0,d,0,0)}
+addEventListener('resize',fit);
+
+function recalc(){
+ const L=360*f*TAU;
+ ['inner','outer','rim'].forEach(k=>{cols[k]=blur(pat[k],L).map(v=>css(lit(v)))});
+ const m=mean(pat.inner),y=blur(pat.inner,L),r0=rms(pat.inner,m),r1=rms(y,mean(y));
+ mixPct=Math.round(Math.max(0,Math.min(1,1-r1/r0))*100);
+ fCalc=f;ui();drawEye();
+}
+const $=id=>document.getElementById(id);
+function stageText(m){
+ if(f<0.05)return 'Đứng yên: thấy rõ từng cung màu.';
+ if(m<20)return 'Quay chậm: mắt vẫn tách được từng cung màu đang trôi.';
+ if(m<50)return 'Quay vừa: các màu nhòe vào nhau nhưng còn thấy vằn màu rõ.';
+ if(m<70)return 'Quay nhanh: màu hòa dần, còn nhấp nháy và vằn màu nhạt.';
+ if(m<80)return 'Rất nhanh: gần đồng đều, chỉ còn ánh màu rất nhẹ.';
+ return 'Tốc độ cao: tâm đĩa gần như một mảng xám đồng đều, chỉ còn nhấp nháy rất nhẹ.';
+}
+function ui(){
+ $('fv').textContent=f.toFixed(1);$('rpm').textContent=Math.round(f*60);
+ $('mix').textContent=mixPct;$('mixBar').style.width=mixPct+'%';$('stageTxt').textContent=stageText(mixPct);
+ const mi=mean(pat.inner),mo=mean(pat.outer);
+ $('swIn').style.background=css(lit(mi));$('hxIn').textContent=hex(lit(mi));
+ $('swOut').style.background=css(lit(mo));$('hxOut').textContent=hex(lit(mo));
+ $('outLbl').textContent=FACES[face].lbl;$('faceLbl').textContent='Đang xem: '+FACES[face].name;
+}
+function wedge(cx,cy,r0,r1,i,ph,colr){
+ const a=(i+ph)*Math.PI/180,b=(i+ph+1.7)*Math.PI/180;
+ ctx.beginPath();ctx.arc(cx,cy,r1,a,b);ctx.arc(cx,cy,r0,b,a,true);ctx.closePath();ctx.fillStyle=colr;ctx.fill();
+}
+let flipT=-1;
+function draw(sx){
+ ctx.clearRect(0,0,S,S);
+ const cx=S/2,cy=S/2,R=S*0.46;
+ ctx.save();ctx.translate(cx,cy);ctx.scale(sx,1);ctx.translate(-cx,-cy);
+ ctx.shadowColor='rgba(0,0,0,.35)';ctx.shadowBlur=S*0.04;ctx.shadowOffsetY=S*0.012;
+ ctx.fillStyle='#FBFAF6';ctx.beginPath();ctx.arc(cx,cy,R,0,7);ctx.fill();
+ ctx.shadowColor='transparent';
+ const rings=[['rim',.90,1],['outer',.62,.90],['inner',.08,.58]];
+ rings.forEach(g=>{const c=cols[g[0]];for(let i=0;i<N;i++)wedge(cx,cy,R*g[1],R*g[2]*0.999,i,phase,c[i])});
+ ctx.strokeStyle='#272c38';
+ [[.58,.62]].forEach(p=>{ctx.lineWidth=R*(p[1]-p[0]);ctx.beginPath();ctx.arc(cx,cy,R*(p[0]+p[1])/2,0,7);ctx.stroke()});
+ ctx.lineWidth=1.2;ctx.strokeStyle='rgba(0,0,0,.35)';[1,.90,.08].forEach(k=>{ctx.beginPath();ctx.arc(cx,cy,R*k,0,7);ctx.stroke()});
+ ctx.fillStyle='#FBFAF6';ctx.beginPath();ctx.arc(cx,cy,R*.08,0,7);ctx.fill();
+ // hai lỗ xỏ dây
+ ctx.fillStyle='#1b1f2a';[-1,1].forEach(s=>{ctx.beginPath();ctx.arc(cx+s*R*.167,cy,R*.017,0,7);ctx.fill()});
+ // ánh bóng nhẹ của giấy
+ const gl=ctx.createLinearGradient(cx-R,cy-R,cx+R,cy+R);gl.addColorStop(0,'rgba(255,255,255,.18)');gl.addColorStop(.5,'rgba(255,255,255,0)');gl.addColorStop(1,'rgba(0,0,0,.10)');
+ ctx.fillStyle=gl;ctx.beginPath();ctx.arc(cx,cy,R,0,7);ctx.fill();
+ ctx.restore();
+}
+let last=performance.now();
+function tick(now){
+ const dt=Math.min(.05,(now-last)/1000);last=now;
+ f+=(target-f)*(1-Math.exp(-dt/.7));if(Math.abs(target-f)<.02)f=target;
+ if(Math.abs(f-fCalc)>.05||fCalc<0)recalc();
+ const rate=Math.min(f,2)*Math.max(0,Math.min(1,1-(f-2)/6)); // mắt không theo kịp: ở tốc độ cao ảnh gần như đứng yên
+ phase=(phase+rate*360*dt)%360;
+ let sx=1;
+ if(flipT>=0){flipT+=dt/.45;if(flipT>=.5&&flipT-dt/.45<.5){face=face==='sun'?'moon':'sun';pat=patterns(FACES[face]);fCalc=-1;recalc()}
+  sx=Math.max(.02,Math.abs(Math.cos(Math.PI*flipT)));if(flipT>=1){flipT=-1;sx=1}}
+ draw(sx);requestAnimationFrame(tick);
+}
+const presets=[['Đứng yên',0],['Chậm',2],['Vừa',10],['Nhanh',25],['Rất nhanh',45]];
+const chips=$('chips');
+presets.forEach(p=>{const b=document.createElement('button');b.textContent=p[0]+(p[1]?' · '+p[1]:'');b.onclick=()=>{setT(p[1])};chips.appendChild(b)});
+function setT(v){target=v;$('sp').value=v;[...chips.children].forEach((b,i)=>b.classList.toggle('on',presets[i][1]===v))}
+$('sp').oninput=e=>{target=+e.target.value;[...chips.children].forEach(b=>b.classList.remove('on'))};
+$('flip').onclick=()=>{if(flipT<0)flipT=0};
+function renderLegend(){const lg=$('lg');lg.innerHTML='';W.forEach((w,i)=>{const s=document.createElement('span');s.style.background=RAINBOW[i];s.textContent=NAMES[i]+' '+fmt(w)+'°';lg.appendChild(s)})}
+renderLegend();
+// ===== Phần chia đĩa chính xác =====
+const MODES=[
+ {t:'Như clip: 6 cung × 60°',names:['Đỏ','Cam','Vàng','Lục','Lam','Tím'],cols:['#D32F2F','#F57C00','#FFEB3B','#4CAF50','#03A9F4','#9C27B0'],w:[60,60,60,60,60,60]},
+ {t:'7 cung đều × 51,43°',names:NAMES.slice(),cols:RAINBOW.slice(),w:Array(7).fill(360/7)},
+ {t:'7 cung cân bằng (đĩa Nhật–Nguyệt)',names:NAMES.slice(),cols:RAINBOW.slice(),w:W.slice()}
+];
+let cur=2;
+const dvChips=$('dvChips');
+MODES.forEach((m,i)=>{const b=document.createElement('button');b.textContent=m.t;b.onclick=()=>{cur=i;dvDraw()};dvChips.appendChild(b)});
+function P(a,r){return [(r*Math.sin(a*Math.PI/180)).toFixed(2),(-r*Math.cos(a*Math.PI/180)).toFixed(2)]}
+function dvDraw(){
+ const m=MODES[cur],R=130;
+ [...dvChips.children].forEach((b,i)=>b.classList.toggle('on',i===cur));
+ let s='',a0=0;
+ m.w.forEach((w,i)=>{const a1=a0+w,p0=P(a0,R),p1=P(a1,R),mid=a0+w/2,n=P(mid,R*.5),d=P(mid,R*.76);
+  s+='<path d="M0,0 L'+p0+' A'+R+','+R+' 0 0 1 '+p1+' Z" fill="'+m.cols[i]+'"/>';
+  s+='<text class="in" x="'+n[0]+'" y="'+n[1]+'" text-anchor="middle" dominant-baseline="middle">'+m.names[i]+'</text>';
+  s+='<text class="in" x="'+d[0]+'" y="'+d[1]+'" text-anchor="middle" dominant-baseline="middle">'+fmt(w)+'°</text>';
+  a0=a1});
+ for(let a=0;a<360;a+=5){const L=a%30===0?12:a%10===0?8:5,p=P(a,R+2),q=P(a,R+2+L);
+  s+='<line x1="'+p[0]+'" y1="'+p[1]+'" x2="'+q[0]+'" y2="'+q[1]+'" stroke="var(--mut)" stroke-width="1"/>';
+  if(a%30===0){const t=P(a,R+26);s+='<text x="'+t[0]+'" y="'+t[1]+'" text-anchor="middle" dominant-baseline="middle">'+a+'°</text>'}}
+ let c=0;
+ m.w.forEach(w=>{const q=P(c,R+16),t=P(c,R+46);
+  s+='<line x1="0" y1="0" x2="'+q[0]+'" y2="'+q[1]+'" stroke="var(--ink)" stroke-width="1.2" opacity=".6"/>';
+  s+='<text class="bd" x="'+t[0]+'" y="'+t[1]+'" text-anchor="middle" dominant-baseline="middle">'+fmt(c)+'°</text>';c+=w});
+ s+='<circle r="3.5" fill="var(--ink)"/>';
+ $('dvSvg').innerHTML=s;
+ dvTable();
+}
+function dvTable(){
+ const m=MODES[cur],D=+$('dvD').value||12,R=D/2;let a=0,h='<tr><th>Cung</th><th>Rộng</th><th>Mốc từ → đến</th><th>Dây cung</th></tr>';
+ m.w.forEach((w,i)=>{h+='<tr><td><i style="display:inline-block;width:12px;height:12px;border-radius:3px;background:'+m.cols[i]+';vertical-align:-1px;margin-right:6px;border:1px solid var(--line)"></i>'+m.names[i]+'</td><td>'+fmt(w)+'°</td><td>'+fmt(a)+'° → '+fmt(a+w)+'°</td><td>'+fmt(2*R*Math.sin(w*Math.PI/360))+' cm</td></tr>';a+=w});
+ h+='<tr><td colspan="4"><b>Tổng: '+fmt(a)+'°</b></td></tr>';
+ $('dvT').innerHTML=h;
+ let note;
+ if(cur===0)note='Chia 6 cung bằng compa, không cần thước đo góc: mở compa đúng bằng bán kính đĩa ('+fmt(R)+' cm). Đặt kim tại một điểm trên đường tròn và vạch một dấu cắt đường tròn. Đặt kim vào dấu vừa vạch rồi vạch tiếp. Sau 6 dấu sẽ khép kín đúng điểm đầu. Nối các dấu với tâm sẽ được 6 cung 60°. Dây cung 60° bằng đúng bán kính. Khi quay nhanh, đĩa 6 cung đều này ra màu nâu cam nhạt (mô phỏng: #BA9887), chưa phải xám.';
+ else if(cur===1)note='Dùng thước đo góc đánh dấu các mốc 0°, 51,43°, 102,86°, 154,29°, 205,71°, 257,14°, 308,57° rồi nối với tâm. Nếu dùng compa với dây cung '+fmt(2*R*Math.sin(Math.PI/7))+' cm thì sai số cộng dồn, nên kiểm tra dấu cuối có trùng điểm đầu không. Chia đều cho đĩa ngả hồng khi quay nhanh (mô phỏng: #AE908F).';
+ else note='Dùng thước đo góc và đánh dấu mọi mốc từ cùng một điểm 0°, không đo nối tiếp, để sai số không cộng dồn. Các mốc: 0°, 36°, 72°, 120°, 188°, 256°, 324°. Với các màu mô phỏng, kiểu chia này cho màu gần xám hơn hai kiểu còn lại (#9E9699). Giấy và bút màu thật phản xạ khác nên có thể còn lệch nhẹ: hãy thử rồi tinh chỉnh độ rộng cung.';
+ $('dvNote').textContent=note;
+}
+$('dvD').oninput=dvTable;
+$('dvApply').onclick=()=>{const m=MODES[cur];RAINBOW=m.cols.slice();NAMES=m.names.slice();W=m.w.slice();pat=patterns(FACES[face]);fCalc=-1;renderLegend();scrollTo({top:0,behavior:'smooth'})};
+// ===== Xưởng thiết kế =====
+let ws=W.map((w,i)=>({c:RAINBOW[i],w}));
+function wsMean(){const t=ws.reduce((a,s)=>a+s.w,0)||1,m=[0,0,0];ws.forEach(s=>{const l=h2l(s.c);for(let k=0;k<3;k++)m[k]+=l[k]*s.w/t});return m}
+function wsUpd(){const m=wsMean(),sr=m.map(s255),ch=Math.max(...sr)-Math.min(...sr);
+ $('wsSw').style.background=css(m);$('wsHx').textContent=hex(m)+' · tổng '+fmt(ws.reduce((a,s)=>a+s.w,0))+'°';
+ $('wsTxt').textContent=ch<14?'Gần xám trung tính: đĩa cân bằng tốt.':'Ngả '+['đỏ','lục','lam'][sr.indexOf(Math.max(...sr))]+' (lệch '+ch+'/255). Thử giảm cung có màu đó hoặc tăng cung màu bù.';}
+function wsRows(){const r=$('wsRows');r.innerHTML='';
+ ws.forEach((s,i)=>{const d=document.createElement('div');d.className='row';
+  d.innerHTML='<span class="mut" style="width:54px">Cung '+(i+1)+'</span><input type="color" value="'+s.c+'" style="width:44px;height:32px;border:0;background:none"><input type="number" min="1" max="359" value="'+Math.round(s.w*10)/10+'"><span class="mut">°</span><button>✕</button>';
+  const q=d.querySelectorAll('input');q[0].oninput=()=>{s.c=q[0].value;wsUpd()};q[1].oninput=()=>{s.w=Math.max(1,+q[1].value||1);wsUpd()};
+  d.querySelector('button').onclick=()=>{if(ws.length>2){ws.splice(i,1);wsRows()}};r.appendChild(d)});
+ wsUpd()}
+$('wsAdd').onclick=()=>{if(ws.length<12){ws.push({c:'#'+Math.floor(Math.random()*0xFFFFFF).toString(16).padStart(6,'0'),w:30});wsRows()}};
+$('wsBal').onclick=()=>{const L=ws.map(s=>h2l(s.c));let p=ws.map(()=>1/ws.length);
+ for(let it=0;it<400;it++){const m=[0,1,2].map(k=>p.reduce((a,x,i)=>a+x*L[i][k],0)),mb=(m[0]+m[1]+m[2])/3;
+  p=p.map((x,i)=>x*Math.exp(-3*[0,1,2].reduce((a,k)=>a+(m[k]-mb)*L[i][k],0)));let t=p.reduce((a,b)=>a+b,0);p=p.map(x=>Math.min(.45,Math.max(.03,x/t)));t=p.reduce((a,b)=>a+b,0);p=p.map(x=>x/t)}
+ ws.forEach((s,i)=>s.w=Math.round(p[i]*3600)/10);wsRows()};
+$('wsApply').onclick=()=>{const t=ws.reduce((a,s)=>a+s.w,0),r=+$('wsRep').value,m=repOf({w:ws.map(s=>s.w*360/t),cols:ws.map(s=>s.c)},r);RAINBOW=m.cols;NAMES=m.cols.map((_,i)=>'Cung '+(i+1));W=m.w;pat=patterns(FACES[face]);fCalc=-1;renderLegend();setT(r>1?Math.round(25/r*2)/2:25);scrollTo({top:0,behavior:'smooth'})};
+// ===== Biểu đồ mắt nhìn thấy gì =====
+function drawEye(){const c=$('eyeCv');if(!c)return;const g=c.getContext('2d'),Wd=c.width,T=f>0?Math.min(3,Math.max(.5,1.5/f)):.5,dt=T/Wd,pre=Math.round(.15/dt);
+ let y=null;const A=[],B=[];
+ for(let n=0;n<pre+Wd;n++){const t=(n-pre)*dt,ang=(((-360*f*t)%360)+360)%360,raw=pat.inner[Math.floor(ang)%N];
+  y=y?y.map((v,k)=>v+(dt/TAU)*(raw[k]-v)):raw.slice();if(n>=pre){A.push(raw);B.push(y.slice())}}
+ g.clearRect(0,0,Wd,c.height);
+ for(let i=0;i<Wd;i++){g.fillStyle=css(lit(A[i]));g.fillRect(i,22,1,42);g.fillStyle=css(lit(B[i]));g.fillRect(i,92,1,42)}
+ g.fillStyle='#8a93a6';g.font='13px system-ui,sans-serif';
+ g.fillText('Ánh sáng thật tại 1 điểm cố định',4,15);g.fillText('Màu mắt cảm nhận (lọc ~20 ms)',4,85);
+ g.textAlign='right';g.fillText('Khoảng thời gian: '+T.toFixed(2).replace('.',',')+' s',Wd-4,15);g.textAlign='left'}
+// ===== Nguồn sáng =====
+let LT=[1,1,1];function lit(v){return v.map((x,j)=>x*LT[j])}
+const LIGHTS=[['Đèn trắng',[1,1,1],'Ánh sáng trắng có đủ các màu nên tâm đĩa hòa ra xám trung tính.'],
+ ['Đèn vàng',[1,.72,.36],'Đèn vàng ít ánh sáng lam nên mọi màu ngả vàng, các cung lam, chàm, tím tối đi.'],
+ ['Đèn lam',[.45,.7,1],'Đèn lam ít ánh sáng đỏ nên mọi màu ngả lam, các cung đỏ, cam tối đi.'],
+ ['Ánh sáng yếu',[.4,.4,.4],'Ánh sáng yếu: màu vẫn hòa nhưng tối, khó thấy khác biệt.']];
+const lgt=$('lgt');
+LIGHTS.forEach((l,i)=>{const b=document.createElement('button');b.textContent=l[0];b.onclick=()=>{LT=l[1];fCalc=-1;$('lgtTxt').textContent=l[2]+' Mắt thật còn tự bù một phần màu đèn, mô phỏng này không bù để thấy rõ ảnh hưởng của nguồn sáng.';[...lgt.querySelectorAll('button')].forEach((x,j)=>x.classList.toggle('on',j===i))};lgt.appendChild(b)});
+lgt.querySelector('button').classList.add('on');$('lgtTxt').textContent=LIGHTS[0][2];
+// ===== Đĩa Benham =====
+const bc=$('bnCv'),bg=bc.getContext('2d');let bph=0,bdir=1,bsp=6,blast=performance.now();
+$('bnSp').oninput=e=>{bsp=+e.target.value;$('bnV').textContent=bsp};
+$('bnDir').onclick=()=>{bdir=-bdir};
+const ARCS=[[.34,8,95],[.5,30,118],[.66,52,140],[.82,74,162]];
+function bnTick(now){const dt=Math.min(.05,(now-blast)/1000);blast=now;const r=bc.getBoundingClientRect();
+ if(r.bottom>0&&r.top<innerHeight){bph=(bph+bdir*bsp*2*Math.PI*dt)%(2*Math.PI);const S=bc.width,c=S/2,R=S*.46;
+  bg.clearRect(0,0,S,S);bg.fillStyle='#fff';bg.beginPath();bg.arc(c,c,R,0,7);bg.fill();
+  bg.fillStyle='#111';bg.beginPath();bg.moveTo(c,c);bg.arc(c,c,R,bph+Math.PI,bph+2*Math.PI);bg.fill();
+  bg.strokeStyle='#111';bg.lineWidth=R*.07;ARCS.forEach(a=>{bg.beginPath();bg.arc(c,c,R*a[0],bph+a[1]*Math.PI/180,bph+a[2]*Math.PI/180);bg.stroke()});
+  bg.lineWidth=2;bg.strokeStyle='rgba(0,0,0,.4)';bg.beginPath();bg.arc(c,c,R,0,7);bg.stroke()}
+ requestAnimationFrame(bnTick)}
+requestAnimationFrame(bnTick);
+// ===== So sánh hai đĩa =====
+const CN=['6 cung đều × 60°','7 cung đều × 51,43°','7 cung cân bằng','Đĩa trong Xưởng thiết kế'];
+let cf=30,cph=0,cKey='',cc={A:[],B:[]},clast=performance.now();
+['A','B'].forEach((X,j)=>{const s=$('cmp'+X);CN.forEach((n,i)=>{const o=document.createElement('option');o.value=i;o.textContent=n;s.appendChild(o)});s.value=j?2:1;const rs=$('cmpR'+X);[1,2,3,4].forEach(n=>{const o=document.createElement('option');o.value=n;o.textContent='lặp '+n+' lần';rs.appendChild(o)})});
+function cmpMode(i){if(i<3)return MODES[i];const t=ws.reduce((a,s)=>a+s.w,0);return {w:ws.map(s=>s.w*360/t),cols:ws.map(s=>s.c)}}
+function repOf(m,r){const w=[],c=[];for(let k=0;k<r;k++){m.w.forEach(x=>w.push(x/r));c.push(...m.cols)}return {w,cols:c}}
+function innerOf(m){const a=[];let acc=0,idx=0;for(let d=0;d<N;d++){while(idx<m.w.length-1&&d+.5>=acc+m.w[idx]){acc+=m.w[idx];idx++}a.push(h2l(m.cols[idx]))}return a}
+function cmpCalc(){const L=360*cf*TAU,out=[];
+ ['A','B'].forEach(X=>{const p=innerOf(repOf(cmpMode(+$('cmp'+X).value),+$('cmpR'+X).value)),y=blur(p,L),mu=lit(mean(p)),sr=mu.map(s255),ch=Math.max(...sr)-Math.min(...sr),mx=Math.round(Math.max(0,1-rms(y,mean(y))/rms(p,mean(p)))*100);
+  cc[X]=y.map(v=>css(lit(v)));$('cmpI'+X).innerHTML='Màu khi hòa hoàn toàn: <b>'+hex(mu)+'</b><br>Độ lệch khỏi xám: <b>'+ch+'</b> · hòa trộn: <b>'+mx+'%</b>';out.push(ch)});
+ $('cmpRes').innerHTML='<b>'+(Math.abs(out[0]-out[1])<4?'Hai đĩa cho màu gần như nhau.':'Đĩa '+(out[0]<out[1]?'A':'B')+' ra xám trung tính hơn (độ lệch '+Math.min(...out)+' so với '+Math.max(...out)+').')+'</b>'}
+$('cmpSp').oninput=e=>{cf=+e.target.value;$('cmpV').textContent=cf};
+function cmpLoop(now){const dt=Math.min(.05,(now-clast)/1000);clast=now;const r=$('cmpCa').getBoundingClientRect();
+ if(r.bottom>0&&r.top<innerHeight){const key=[cf,$('cmpA').value,$('cmpB').value,$('cmpRA').value,$('cmpRB').value,LT,JSON.stringify(ws)].join('|');if(key!==cKey){cKey=key;cmpCalc()}
+  cph=(cph+Math.min(cf,2)*Math.max(0,Math.min(1,1-(cf-2)/6))*360*dt)%360;
+  ['A','B'].forEach(X=>{const g=$('cmpC'+X.toLowerCase()).getContext('2d'),S=300,h=S/2,R=S*.46;g.clearRect(0,0,S,S);
+   for(let i=0;i<N;i++){g.beginPath();g.moveTo(h,h);g.arc(h,h,R,(i+cph)*Math.PI/180,(i+cph+1.7)*Math.PI/180);g.closePath();g.fillStyle=cc[X][i];g.fill()}
+   g.strokeStyle='rgba(0,0,0,.35)';g.lineWidth=1.5;g.beginPath();g.arc(h,h,R,0,7);g.stroke()})}
+ requestAnimationFrame(cmpLoop)}
+requestAnimationFrame(cmpLoop);
+// ===== Mini game =====
+const GP=[['đỏ','#E53935'],['cam','#FB8C00'],['vàng','#FDD835'],['lục','#2E9E4F'],['lam','#1E88E5'],['tím','#8E24AA'],['hồng','#EC407A']];
+let gm={r:0,s:0,cur:null,lock:false};
+function gmMix(ps){const t=ps.reduce((a,p)=>a+p.w,0),m=[0,0,0];ps.forEach(p=>{const l=h2l(p.c);for(let k=0;k<3;k++)m[k]+=l[k]*p.w/t});return m}
+function sd(a,b){return Math.hypot(...a.map((x,k)=>s255(x)-s255(b[k])))}
+function gmParts(){const n=Math.random()<.6?2:3,O=n===2?[[1,1],[2,1],[3,1]]:[[1,1,1],[2,1,1]],w=O[Math.floor(Math.random()*O.length)];
+ return GP.slice().sort(()=>Math.random()-.5).slice(0,n).map((p,i)=>({n:p[0],c:p[1],w:w[i]}))}
+function gmNew(){gm.r++;const parts=gmParts(),mix=gmMix(parts),opts=[mix];let g=0;
+ while(opts.length<4&&g++<300){const m=gmMix(gmParts());if(opts.every(o=>sd(o,m)>55))opts.push(m)}
+ opts.sort(()=>Math.random()-.5);gm.cur={parts,mix,opts};gm.lock=false;
+ $('gmR').textContent=gm.r;$('gmFb').textContent='';$('gmNext').hidden=true;
+ const box=$('gmOpts');box.innerHTML='';opts.forEach((o,i)=>{const b=document.createElement('button');b.className='opt';b.style.background=css(o);b.setAttribute('aria-label','Đáp án '+(i+1));b.onclick=()=>gmPick(i);box.appendChild(b)});
+ gmDraw(false)}
+function gmPick(i){if(gm.lock)return;gm.lock=true;const c=gm.cur,ok=c.opts[i]===c.mix,t=c.parts.reduce((a,p)=>a+p.w,0),desc=c.parts.map(p=>p.n+' '+Math.round(p.w/t*100)+'%').join(' + ');
+ if(ok)gm.s++;[...$('gmOpts').children].forEach((x,j)=>x.classList.add(c.opts[j]===c.mix?'ok':'no'));
+ $('gmS').textContent=gm.s;gmDraw(true);
+ $('gmFb').innerHTML=(ok?'<b>Đúng!</b> ':'<b>Chưa đúng.</b> ')+'Đĩa gồm '+desc+'. Mắt lấy trung bình ánh sáng theo diện tích từng màu nên ra <b>'+hex(c.mix)+'</b>. Màu chiếm nhiều diện tích hơn kéo kết quả về phía nó, và kết quả thường kém rực rỡ hơn các màu gốc.';
+ const nx=$('gmNext');nx.hidden=false;nx.textContent=gm.r>=6?'Xem kết quả ▶':'Vòng tiếp ▶'}
+$('gmNext').onclick=()=>{const nx=$('gmNext');
+ if(nx.textContent.startsWith('Xem')){$('gmFb').innerHTML='<b>Kết quả: '+gm.s+'/6.</b> '+(gm.s>=5?'Xuất sắc, bạn đã hiểu cách mắt trộn ánh sáng!':gm.s>=3?'Khá tốt, thử lại để chắc hơn nhé.':'Hãy thử các thí nghiệm ở trên rồi chơi lại nhé.');$('gmOpts').innerHTML='';nx.textContent='Chơi lại'}
+ else if(nx.textContent==='Chơi lại'){gm.r=0;gm.s=0;$('gmS').textContent=0;gmNew()}
+ else gmNew()};
+function gmDraw(rev){const c=$('gmCv'),g=c.getContext('2d'),S=c.width,h=S/2,R=S*.46,t=gm.cur.parts.reduce((a,p)=>a+p.w,0);g.clearRect(0,0,S,S);
+ for(let rep=0;rep<3;rep++){let a=rep*120;gm.cur.parts.forEach(p=>{const w=120*p.w/t;g.fillStyle=p.c;g.beginPath();g.moveTo(h,h);g.arc(h,h,R,(a-90)*Math.PI/180,(a+w-90)*Math.PI/180);g.closePath();g.fill();a+=w})}
+ g.strokeStyle='rgba(0,0,0,.35)';g.lineWidth=1.5;g.beginPath();g.arc(h,h,R,0,7);g.stroke();
+ if(rev){g.fillStyle=css(gm.cur.mix);g.beginPath();g.arc(h,h,R*.36,0,7);g.fill();g.lineWidth=3;g.strokeStyle='#fff';g.stroke()}}
+// ===== Bảng thực nghiệm =====
+const OBS=['Thấy rõ từng cung','Nhòe, còn vằn rõ','Còn vằn nhạt / nhấp nháy','Gần như đều'],stg=m=>m<20?0:m<50?1:m<80?2:3;
+function labPred(k,r,f,tau){const p=innerOf(repOf(cmpMode(k),r)),y=blur(p,360*f*(tau||TAU));return Math.round(Math.max(0,1-rms(y,mean(y))/rms(p,mean(p)))*100)}
+const lb=$('labB');
+for(let i=1;i<=5;i++){const tr=document.createElement('tr');tr.innerHTML='<td>'+i+'</td><td><select class="lk">'+CN.map((n,j)=>'<option value="'+j+'">'+n+'</option>').join('')+'</select></td><td><select class="lr">'+[1,2,3,4].map(n=>'<option>'+n+'</option>').join('')+'</select></td><td><input type="number" class="ln" min="1" step="1"></td><td class="lf">–</td><td class="lh">–</td><td><select class="lo">'+OBS.map((n,j)=>'<option value="'+j+'">'+n+'</option>').join('')+'</select></td><td class="lp">–</td><td class="lc">–</td>';lb.appendChild(tr)}
+function labUpd(){const fps=+$('labFps').value;[...lb.rows].forEach(tr=>{const q=c=>tr.querySelector(c),n=+q('.ln').value;
+ if(!(fps>0&&n>0)){q('.lf').textContent='–';q('.lh').textContent='–';q('.lp').textContent='–';q('.lc').textContent='–';return}
+ const f=fps/n,m=labPred(+q('.lk').value,+q('.lr').value,f),d=Math.abs(stg(m)-(+q('.lo').value));
+ q('.lf').innerHTML='<b>'+fmt(+f.toFixed(1))+'</b> ± '+Math.round(100/n)+'%';q('.lh').textContent=fmt(+(f*+q('.lr').value).toFixed(1));q('.lp').textContent=m+'%';q('.lc').textContent=d===0?'Khớp':d===1?'Lệch 1 mức':'Lệch nhiều'})}
+$('labFps').oninput=labUpd;lb.addEventListener('input',labUpd);lb.addEventListener('change',labUpd);
+let fitT=null;
+$('labFitB').onclick=()=>{const fps=+$('labFps').value,R=[...lb.rows].map(tr=>{const q=c=>tr.querySelector(c);return{n:+q('.ln').value,k:+q('.lk').value,r:+q('.lr').value,o:+q('.lo').value}}).filter(x=>fps>0&&x.n>0);
+ if(R.length<3){$('labFit').textContent='Cần ít nhất 3 dòng có số liệu.';$('labFitA').hidden=true;return}
+ let best=null;for(let t=5;t<=80;t+=5){const e=R.reduce((a,x)=>a+Math.abs(stg(labPred(x.k,x.r,fps/x.n,t/1000))-x.o),0);if(!best||e<best.e||(e===best.e&&Math.abs(t-20)<Math.abs(best.t-20)))best={t,e}}
+ fitT=best.t;$('labFit').textContent=' τ khớp nhất: '+best.t+' ms (tổng lệch '+best.e+' mức trên '+R.length+' dòng; mô phỏng đang dùng '+Math.round(TAU*1000)+' ms). Ít số liệu thì chỉ mang tính gợi ý.';$('labFitA').hidden=false};
+$('labFitA').onclick=()=>{if(!fitT)return;TAU=fitT/1000;fCalc=-1;cKey='';labUpd();$('labFit').textContent+=' Đã áp dụng cho mô phỏng.'};
+// ===== Dự đoán trước, xem sau =====
+const pd={s:0,n:0,c:null,lock:false};
+function pdNew(){const k=Math.floor(Math.random()*3),r=1+Math.floor(Math.random()*3),f=[3,6,10,15,20,30,40][Math.floor(Math.random()*7)];pd.c={k,r,f,m:labPred(k,r,f)};pd.lock=false;
+ $('pdQ').innerHTML='Đĩa <b>'+CN[k]+'</b>, lặp dãy màu <b>'+r+'</b> lần, quay <b>'+f+' vòng/giây</b>. Tâm đĩa sẽ trông thế nào?';$('pdFb').textContent='';
+ const o=$('pdOpts');o.innerHTML='';OBS.forEach((t,i)=>{const b=document.createElement('button');b.textContent=t;b.onclick=()=>pdPick(i);o.appendChild(b)})}
+function pdPick(i){if(pd.lock)return;pd.lock=true;const c=pd.c,a=stg(c.m);pd.n++;if(i===a)pd.s++;$('pdS').textContent=pd.s;$('pdN').textContent=pd.n;
+ [...$('pdOpts').children].forEach((b,j)=>{if(j===a)b.classList.add('on')});
+ $('pdFb').innerHTML=(i===a?'<b>Đúng!</b> ':'<b>Chưa đúng.</b> ')+'Mô hình cho độ hòa trộn <b>'+c.m+'%</b>, tức mức “'+OBS[a]+'”. Hãy kiểm tra lại bằng thanh trượt ở mô phỏng chính và bằng đĩa thật.'}
+$('pdNext').onclick=pdNew;pdNew();
+gmNew();
+wsRows();
+dvDraw();
+setT(0);fit();requestAnimationFrame(tick);
+})();
+</script>
+</body>
+</html>
